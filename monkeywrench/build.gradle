@@ -1,6 +1,35 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.github.dcendents.android-maven'
+
+def vCode = 1
+def vName = '0.1.1'
+
+ext {
+    bintrayRepo = 'Novasa'
+    bintrayName = 'com.novasa.monkeywrench'
+
+    libraryName = 'monkeywrench'
+
+    publishedGroupId = 'com.novasa'
+    artifact = 'monkeywrench'
+    libraryVersion = vName
+    libraryDescription = 'A library for easily manipulating the text of a single TextView in Android.'
+
+    siteUrl = 'https://github.com/Novasa/MonkeyWrench'
+    gitUrl = 'https://github.com/Novasa/MonkeyWrench.git'
+
+
+    developerId = 'mhswtf'
+    developerName = 'Mikkel Schläger'
+    developerEmail = 'mikkel@novasa.com'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
 
 android {
     compileSdkVersion 28
@@ -8,8 +37,8 @@ android {
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 1
-        versionName "0.1b"
+        versionCode vCode
+        versionName vName
     }
 
     buildTypes {
@@ -18,9 +47,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
 }
 
 dependencies {
     implementation"org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+}
+
+if (project.rootProject.file('local.properties').exists()) {
+    apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
+    apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
 }
