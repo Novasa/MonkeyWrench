@@ -1,8 +1,6 @@
 package com.novasa.monkeywrenchexample
 
 import android.graphics.Color
-import android.graphics.Typeface
-import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -17,20 +15,21 @@ class MainActivity : AppCompatActivity() {
 
         val input = getString(R.string.input)
 
-        val onClick: (Uri) -> Unit = {
-            Toast.makeText(this@MainActivity, "$it", Toast.LENGTH_SHORT).show()
-        }
-
         buttonSpan.setOnClickListener {
             MonkeyWrench.span(input, textView) {
 
                 htmlBold {
-                    typeFace(Typeface.DEFAULT_BOLD)
+                    fakeBold()
                 }
 
-                htmlLink(onClick) {
+                htmlLink {
                     color(Color.RED)
-                    scale(1.2f)
+                    scale(1.5f)
+                    underline()
+
+                    onClick { uri ->
+                        Toast.makeText(this@MainActivity, "$uri", Toast.LENGTH_SHORT).show()
+                    }
                 }
 
                 tag("QQ", "WW") {
@@ -46,5 +45,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
     }
 }

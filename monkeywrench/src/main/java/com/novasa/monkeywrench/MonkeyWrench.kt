@@ -10,6 +10,7 @@ import android.text.method.LinkMovementMethod
 import android.text.style.CharacterStyle
 import android.text.style.ClickableSpan
 import android.text.style.TypefaceSpan
+import android.util.Log
 import android.view.View
 import android.widget.TextView
 import java.util.*
@@ -21,12 +22,17 @@ import kotlin.collections.ArrayList
 class MonkeyWrench(val input: CharSequence) {
 
     companion object {
-        private const val COLOR_UNDEFINED = 1
+
+        const val TAG = "MonkeyWrench"
 
         fun span(input: CharSequence, setup: MonkeyWrench.() -> Unit): CharSequence {
             val instance = MonkeyWrench(input)
             setup(instance)
             return instance.doTheThing()
+        }
+
+        fun span(textView: TextView, setup: MonkeyWrench.() -> Unit) {
+            span(textView.text, textView, setup)
         }
 
         fun span(input: CharSequence, textView: TextView, setup: MonkeyWrench.() -> Unit) {
@@ -37,12 +43,11 @@ class MonkeyWrench(val input: CharSequence) {
     }
 
     private val builder = SpannableStringBuilder()
-
-    private val spans = ArrayList<Wrench>()
+    private val wrenches = ArrayList<Wrench>()
 
     fun <T : Wrench> addWrench(span: T, setup: T.() -> Unit): MonkeyWrench {
         setup(span)
-        spans.add(span)
+        wrenches.add(span)
         return this
     }
 
@@ -59,8 +64,8 @@ class MonkeyWrench(val input: CharSequence) {
         return html("b", setup)
     }
 
-    fun htmlLink(onClick: (Uri) -> Unit, setup: ClickWrench.() -> Unit): MonkeyWrench {
-        return addWrench(ClickWrench(onClick), setup)
+    fun htmlLink(setup: ClickWrench.() -> Unit): MonkeyWrench {
+        return addWrench(ClickWrench(), setup)
     }
 
     fun interval(vararg intervals: Pair<Int, Int>, setup: Wrench.() -> Unit): MonkeyWrench {
@@ -80,8 +85,8 @@ class MonkeyWrench(val input: CharSequence) {
 
         val intervals = ArrayList<Interval>()
 
-        spans.forEach { span ->
-            intervals.addAll(span.createIntervals(input))
+        wrenches.forEach { wrench ->
+            intervals.addAll(wrench.createIntervals(input))
         }
 
         intervals.sortWith(Comparator { o1, o2 ->
@@ -126,7 +131,7 @@ class MonkeyWrench(val input: CharSequence) {
      */
     fun doTheThingUnto(textView: TextView) {
         textView.text = doTheThing()
-        spans.forEach { span ->
+        wrenches.forEach { span ->
             span.setupTextView(textView)
         }
     }
@@ -137,11 +142,14 @@ class MonkeyWrench(val input: CharSequence) {
 
     open class Wrench(val finder: Finder) {
 
-        protected var typeFace = Typeface.DEFAULT
-        protected var color = COLOR_UNDEFINED
-        protected var bgColor = COLOR_UNDEFINED
-        protected var scale = 1f
+        protected var typeFace: Typeface? = null
+        protected var color: Int? = null
+        protected var bgColor: Int? = null
+        protected var scale: Float? = null
         protected var underline = false
+        protected var strikethrough = false
+        protected var fakeBold = false
+
 
         fun typeFace(typeface: Typeface): Wrench {
             typeFace = typeface
@@ -168,6 +176,16 @@ class MonkeyWrench(val input: CharSequence) {
             return this
         }
 
+        fun strikethrough(): Wrench {
+            this.strikethrough = true
+            return this
+        }
+
+        fun fakeBold(): Wrench {
+            this.fakeBold = true
+            return this
+        }
+
         open fun getSpan(): CharacterStyle {
             return CustomTypefaceSpan(this)
         }
@@ -178,21 +196,27 @@ class MonkeyWrench(val input: CharSequence) {
 
         open fun apply(paint: Paint) {
 
-            paint.typeface = typeFace
-
-            if (color != COLOR_UNDEFINED) {
-                paint.color = color
+            typeFace?.let {
+                paint.typeface = it
             }
 
-            if (paint is TextPaint && bgColor != COLOR_UNDEFINED) {
-                paint.bgColor = bgColor
+            color?.let {
+                paint.color = it
             }
 
-            if (scale != 1f) {
-                paint.textSize = paint.textSize * scale
+            bgColor?.let {
+                if (paint is TextPaint) {
+                    paint.bgColor = it
+                }
+            }
+
+            scale?.let {
+                paint.textSize *= it
             }
 
             paint.isUnderlineText = underline
+            paint.isStrikeThruText = strikethrough
+            paint.isFakeBoldText = fakeBold
         }
 
         open fun setupTextView(textView: TextView) {
@@ -200,7 +224,21 @@ class MonkeyWrench(val input: CharSequence) {
         }
     }
 
-    class ClickWrench(val onClick: (Uri) -> Unit) : Wrench(HrefFinder()) {
+    class ClickWrench : Wrench(HrefFinder()) {
+
+        private var onClickEvent: ((Uri) -> Unit)? = null
+
+        fun onClick(onClick: (Uri) -> Unit): ClickWrench {
+            this.onClickEvent = onClick
+            return this
+        }
+
+        internal fun onClick(uri: Uri) {
+            onClickEvent?.let {
+                it(uri)
+            } ?: Log.w(TAG, "Click Wrench was poked, but no handler has been supplied. Do the onClick() thing in the setup please.")
+        }
+
         override fun setupTextView(textView: TextView) {
             textView.movementMethod = LinkMovementMethod.getInstance()
         }
@@ -287,7 +325,7 @@ class MonkeyWrench(val input: CharSequence) {
         override fun toString(): String = "$p0 - $p1 (o: $openLength, c: $closeLength)"
     }
 
-    internal class HrefInterval(wrench: ClickWrench, sequence: CharSequence, p0: Int, p1: Int, hrefString: String) : Interval(wrench, sequence, p0, p1) {
+    class HrefInterval(wrench: ClickWrench, sequence: CharSequence, p0: Int, p1: Int, hrefString: String) : Interval(wrench, sequence, p0, p1) {
         override val openLength: Int = "<a href=$hrefString>".length
         private val uri: Uri = Uri.parse(hrefString.trim('"', '\''))
 
