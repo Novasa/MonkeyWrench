@@ -73,17 +73,17 @@ class MonkeyWrench(val input: CharSequence) {
 
     // region Kotlin builder methods
 
-    fun <T : Schematic> addSchematic(wrench: T, setup: T.() -> Unit) {
+    fun <T : Schematic> schematic(wrench: T, setup: T.() -> Unit) {
         addSchematic(wrench)
         setup(wrench)
     }
 
-    fun tag(open: CharSequence, close: CharSequence, setup: Schematic.() -> Unit) = addSchematic(tag(open, close), setup)
-    fun html(tag: String, setup: Schematic.() -> Unit) = addSchematic(tag("<$tag>", "</$tag>"), setup)
-    fun htmlBold(setup: Schematic.() -> Unit) = addSchematic(html("b"), setup)
-    fun htmlLink(setup: ClickSchematic.() -> Unit) = addSchematic(htmlLink(), setup)
-    fun interval(vararg intervals: Pair<Int, Int>, setup: Schematic.() -> Unit) = addSchematic(interval(*intervals), setup)
-    fun regex(regex: String, setup: Schematic.() -> Unit) = addSchematic(regex(regex), setup)
+    fun tag(open: CharSequence, close: CharSequence, setup: Schematic.() -> Unit) = schematic(tag(open, close), setup)
+    fun html(tag: String, setup: Schematic.() -> Unit) = schematic(tag("<$tag>", "</$tag>"), setup)
+    fun htmlBold(setup: Schematic.() -> Unit) = schematic(html("b"), setup)
+    fun htmlLink(setup: ClickSchematic.() -> Unit) = schematic(htmlLink(), setup)
+    fun interval(vararg intervals: Pair<Int, Int>, setup: Schematic.() -> Unit) = schematic(interval(*intervals), setup)
+    fun regex(regex: String, setup: Schematic.() -> Unit) = schematic(regex(regex), setup)
 
     // endregion
 
