@@ -9,7 +9,7 @@ import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.CharacterStyle
 import android.text.style.ClickableSpan
-import android.text.style.TypefaceSpan
+import android.text.style.MetricAffectingSpan
 import android.util.Log
 import android.view.View
 import android.widget.TextView
@@ -24,6 +24,27 @@ class MonkeyWrench(val input: CharSequence) {
     companion object {
 
         const val TAG = "MonkeyWrench"
+
+        @JvmStatic
+        fun span(input: CharSequence): MonkeyWrench = MonkeyWrench(input)
+
+        @JvmStatic
+        fun tag(open: CharSequence, close: CharSequence): Schematic = Schematic(TagFinder(open, close))
+
+        @JvmStatic
+        fun html(tag: String): Schematic = tag("<$tag>", "</$tag>")
+
+        @JvmStatic
+        fun htmlBold(): Schematic = html("b")
+
+        @JvmStatic
+        fun htmlLink(): ClickSchematic = ClickSchematic()
+
+        @JvmStatic
+        fun interval(vararg intervals: Pair<Int, Int>): Schematic = Schematic(IntervalFinder(intervals))
+
+        @JvmStatic
+        fun regex(regex: String): Schematic = Schematic(RegexFinder(regex))
 
         fun span(input: CharSequence, setup: MonkeyWrench.() -> Unit): CharSequence {
             val instance = MonkeyWrench(input)
@@ -43,40 +64,28 @@ class MonkeyWrench(val input: CharSequence) {
     }
 
     private val builder = SpannableStringBuilder()
-    private val wrenches = ArrayList<Wrench>()
+    private val wrenches = ArrayList<Schematic>()
 
-    fun <T : Wrench> addWrench(span: T, setup: T.() -> Unit): MonkeyWrench {
-        setup(span)
-        wrenches.add(span)
+    fun addSchematic(schematic: Schematic): MonkeyWrench {
+        wrenches.add(schematic)
         return this
     }
 
-    fun tag(open: CharSequence, close: CharSequence, setup: Wrench.() -> Unit): MonkeyWrench {
-        val wrench = Wrench(TagFinder(open, close))
-        return addWrench(wrench, setup)
+    // region Kotlin builder methods
+
+    fun <T : Schematic> addSchematic(wrench: T, setup: T.() -> Unit) {
+        addSchematic(wrench)
+        setup(wrench)
     }
 
-    fun html(tag: String, setup: Wrench.() -> Unit): MonkeyWrench {
-        return tag("<$tag>", "</$tag>", setup)
-    }
+    fun tag(open: CharSequence, close: CharSequence, setup: Schematic.() -> Unit) = addSchematic(tag(open, close), setup)
+    fun html(tag: String, setup: Schematic.() -> Unit) = addSchematic(tag("<$tag>", "</$tag>"), setup)
+    fun htmlBold(setup: Schematic.() -> Unit) = addSchematic(html("b"), setup)
+    fun htmlLink(setup: ClickSchematic.() -> Unit) = addSchematic(htmlLink(), setup)
+    fun interval(vararg intervals: Pair<Int, Int>, setup: Schematic.() -> Unit) = addSchematic(interval(*intervals), setup)
+    fun regex(regex: String, setup: Schematic.() -> Unit) = addSchematic(regex(regex), setup)
 
-    fun htmlBold(setup: Wrench.() -> Unit): MonkeyWrench {
-        return html("b", setup)
-    }
-
-    fun htmlLink(setup: ClickWrench.() -> Unit): MonkeyWrench {
-        return addWrench(ClickWrench(), setup)
-    }
-
-    fun interval(vararg intervals: Pair<Int, Int>, setup: Wrench.() -> Unit): MonkeyWrench {
-        val wrench = Wrench(IntervalFinder(intervals))
-        return addWrench(wrench, setup)
-    }
-
-    fun regex(regex: String, setup: Wrench.() -> Unit): MonkeyWrench {
-        val wrench = Wrench(RegexFinder(regex))
-        return addWrench(wrench, setup)
-    }
+    // endregion
 
     /**
      * Does the thing
@@ -140,7 +149,7 @@ class MonkeyWrench(val input: CharSequence) {
         return builder.toString()
     }
 
-    open class Wrench(val finder: Finder) {
+    open class Schematic(val finder: Finder) {
 
         protected var typeFace: Typeface? = null
         protected var color: Int? = null
@@ -151,43 +160,43 @@ class MonkeyWrench(val input: CharSequence) {
         protected var fakeBold = false
 
 
-        fun typeFace(typeface: Typeface): Wrench {
+        fun typeFace(typeface: Typeface): Schematic {
             typeFace = typeface
             return this
         }
 
-        fun color(color: Int): Wrench {
+        fun color(color: Int): Schematic {
             this.color = color
             return this
         }
 
-        fun backgroundColor(color: Int): Wrench {
+        fun backgroundColor(color: Int): Schematic {
             this.bgColor = color
             return this
         }
 
-        fun scale(scale: Float): Wrench {
+        fun scale(scale: Float): Schematic {
             this.scale = scale
             return this
         }
 
-        fun underline(): Wrench {
+        fun underline(): Schematic {
             this.underline = true
             return this
         }
 
-        fun strikethrough(): Wrench {
+        fun strikethrough(): Schematic {
             this.strikethrough = true
             return this
         }
 
-        fun fakeBold(): Wrench {
+        fun fakeBold(): Schematic {
             this.fakeBold = true
             return this
         }
 
         open fun getSpan(): CharacterStyle {
-            return CustomTypefaceSpan(this)
+            return Span(this)
         }
 
         internal fun createIntervals(input: CharSequence): List<Interval> {
@@ -224,11 +233,11 @@ class MonkeyWrench(val input: CharSequence) {
         }
     }
 
-    class ClickWrench : Wrench(HrefFinder()) {
+    class ClickSchematic : Schematic(HrefFinder()) {
 
         private var onClickEvent: ((Uri) -> Unit)? = null
 
-        fun onClick(onClick: (Uri) -> Unit): ClickWrench {
+        fun onClick(onClick: (Uri) -> Unit): ClickSchematic {
             this.onClickEvent = onClick
             return this
         }
@@ -244,42 +253,49 @@ class MonkeyWrench(val input: CharSequence) {
         }
     }
 
+    /** Finds [Interval]s in the input string, that the [Schematic] is applied to. */
     abstract class Finder {
+
+        /** Must return the length of any opening tag that is not included in the output. Example: <b> = 3 */
         open val openLength: Int = 0
+
+        /** Must return the length of any closing tag that is not included in the output. Example: </b> = 4 */
         open val closeLength: Int = 0
 
-        abstract fun createIntervals(input: CharSequence, wrench: Wrench): List<Interval>
+        abstract fun createIntervals(input: CharSequence, schematic: Schematic): List<Interval>
     }
 
-    open class RegexFinder(protected val regex: String): Finder() {
+    open class RegexFinder(protected val regex: String) : Finder() {
 
+        /** If the regex includes groups, this is the group index of the desired output. Default is 0, which is the entire regex match. */
         open var outputGroupIndex = 0
 
-        override fun createIntervals(input: CharSequence, wrench: Wrench): List<Interval> {
+        override fun createIntervals(input: CharSequence, schematic: Schematic): List<Interval> {
             val result = ArrayList<Interval>()
 
             val matcher = Pattern.compile(regex).matcher(input)
             while (matcher.find()) {
-                val interval = onMatch(wrench, matcher)
+                val interval = onMatch(schematic, matcher)
                 result.add(interval)
             }
 
             return result
         }
 
-        fun onMatch(wrench: Wrench, matcher: Matcher): Interval {
+        fun onMatch(schematic: Schematic, matcher: Matcher): Interval {
             val sequence = matcher.group(outputGroupIndex)
             val p0 = matcher.start(outputGroupIndex)
             val p1 = matcher.end(outputGroupIndex)
 
-            return onMatch(wrench, matcher, sequence, p0, p1)
+            return onMatch(schematic, matcher, sequence, p0, p1)
         }
 
-        open fun onMatch(wrench: Wrench, matcher: Matcher, sequence: String, p0: Int, p1: Int): Interval {
-            return Interval(wrench, sequence, p0, p1)
+        open fun onMatch(schematic: Schematic, matcher: Matcher, sequence: String, p0: Int, p1: Int): Interval {
+            return Interval(schematic, sequence, p0, p1)
         }
     }
 
+    /** Use for simple open/close tag matches, like html tags. */
     open class TagFinder(open: CharSequence, close: CharSequence) : RegexFinder("$open(.*?)$close") {
         override val openLength: Int = open.length
         override val closeLength: Int = close.length
@@ -290,15 +306,15 @@ class MonkeyWrench(val input: CharSequence) {
 
         override var outputGroupIndex: Int = 2
 
-        override fun onMatch(wrench: Wrench, matcher: Matcher, sequence: String, p0: Int, p1: Int): Interval {
+        override fun onMatch(schematic: Schematic, matcher: Matcher, sequence: String, p0: Int, p1: Int): Interval {
             val href = matcher.group(1)
-            return HrefInterval(wrench as ClickWrench, sequence, p0, p1, href)
+            return HrefInterval(schematic as ClickSchematic, sequence, p0, p1, href)
         }
     }
 
-    open class IntervalFinder(protected val intervals: Array<out Pair<Int, Int>>): Finder() {
+    open class IntervalFinder(protected val intervals: Array<out Pair<Int, Int>>) : Finder() {
 
-        override fun createIntervals(input: CharSequence, wrench: Wrench): List<Interval> {
+        override fun createIntervals(input: CharSequence, schematic: Schematic): List<Interval> {
             val result = ArrayList<Interval>(intervals.size)
 
             intervals.forEach { interval ->
@@ -309,43 +325,47 @@ class MonkeyWrench(val input: CharSequence) {
                 }
 
                 val sequence = input.subSequence(p0, p1)
-                result.add(Interval(wrench, sequence, p0, p1))
+                result.add(Interval(schematic, sequence, p0, p1))
             }
 
             return result
         }
     }
 
-    open class Interval internal constructor(val wrench: Wrench, val sequence: CharSequence, val p0: Int, val p1: Int) {
-        open val openLength: Int = wrench.finder.openLength
-        open val closeLength: Int = wrench.finder.closeLength
+    /**
+     * Represents a match in the input, found by a [Finder].
+     */
+    open class Interval(val schematic: Schematic, val sequence: CharSequence, val p0: Int, val p1: Int) {
+        open val openLength: Int = schematic.finder.openLength
+        open val closeLength: Int = schematic.finder.closeLength
 
-        open fun getSpan(): CharacterStyle = wrench.getSpan()
+        /** Must return a [CharacterStyle] that calls [Interval.schematic]'s [Schematic.apply] in the [CharacterStyle.updateDrawState] method */
+        open fun getSpan(): CharacterStyle = schematic.getSpan()
 
         override fun toString(): String = "$p0 - $p1 (o: $openLength, c: $closeLength)"
     }
 
-    class HrefInterval(wrench: ClickWrench, sequence: CharSequence, p0: Int, p1: Int, hrefString: String) : Interval(wrench, sequence, p0, p1) {
+    class HrefInterval(wrench: ClickSchematic, sequence: CharSequence, p0: Int, p1: Int, hrefString: String) : Interval(wrench, sequence, p0, p1) {
         override val openLength: Int = "<a href=$hrefString>".length
         private val uri: Uri = Uri.parse(hrefString.trim('"', '\''))
 
-        override fun getSpan(): CharacterStyle = ClickSpan(uri, wrench as ClickWrench)
+        override fun getSpan(): CharacterStyle = ClickSpan(uri, schematic as ClickSchematic)
 
         override fun toString(): String = "${super.toString()} - $uri"
     }
 
-    private class CustomTypefaceSpan internal constructor(private val wrench: Wrench) : TypefaceSpan("") {
+    open class Span(val schematic: Schematic) : MetricAffectingSpan() {
 
         override fun updateDrawState(ds: TextPaint) {
-            wrench.apply(ds)
+            schematic.apply(ds)
         }
 
         override fun updateMeasureState(paint: TextPaint) {
-            wrench.apply(paint)
+            schematic.apply(paint)
         }
     }
 
-    private class ClickSpan(val uri: Uri, val wrench: ClickWrench) : ClickableSpan() {
+    open class ClickSpan(val uri: Uri, val wrench: ClickSchematic) : ClickableSpan() {
 
         override fun onClick(widget: View) {
             wrench.onClick(uri)

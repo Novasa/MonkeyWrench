@@ -15,6 +15,8 @@ class MainActivity : AppCompatActivity() {
 
         val input = getString(R.string.input)
 
+        textView.text = input
+
         buttonSpan.setOnClickListener {
             MonkeyWrench.span(input, textView) {
 
