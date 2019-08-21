@@ -3,13 +3,24 @@ package com.novasa.monkeywrench
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.widget.TextView
-import com.novasa.monkeywrench.finder.*
-import com.novasa.monkeywrench.schematic.ClickSchematic
+import com.novasa.monkeywrench.finder.Finder
+import com.novasa.monkeywrench.finder.Match
+import com.novasa.monkeywrench.schematic.Bit
+import com.novasa.monkeywrench.schematic.Mutater
 import com.novasa.monkeywrench.schematic.Schematic
 import java.util.*
 import kotlin.collections.ArrayList
 
-@Suppress("unused", "MemberVisibilityCanBePrivate")
+/**
+ * [MonkeyWrench] overview:
+ *
+ * An instance consists of one or more [Schematic]s.
+ *
+ * A [Schematic] consists of three types of parts:
+ * 1. [Finder]s find matches in the input text, that the [Schematic] will apply to.
+ * 2. [Mutater]s mutate the input text found by the [Finder]s.
+ * 3. [Bit]s
+ */
 class MonkeyWrench private constructor() {
 
     companion object {
@@ -17,43 +28,28 @@ class MonkeyWrench private constructor() {
         const val TAG = "MonkeyWrench"
 
         @JvmStatic
-        fun build(): MonkeyWrench = MonkeyWrench()
+        fun create(): MonkeyWrench = MonkeyWrench()
 
-        @JvmStatic
-        fun allOfIt(): Schematic = Schematic(GlobalFinder())
+        fun create(setup: MonkeyWrench.() -> Unit): MonkeyWrench = create().also(setup)
 
-        @JvmStatic
-        fun tag(open: CharSequence, close: CharSequence): Schematic = Schematic(TagFinder(open, close))
+        fun work(input: CharSequence, setup: MonkeyWrench.() -> Unit): CharSequence = create(setup).work(input)
 
-        @JvmStatic
-        fun html(tag: String): Schematic = tag("<$tag>", "</$tag>")
-
-        @JvmStatic
-        fun htmlBold(): Schematic = html("b")
-
-        @JvmStatic
-        fun htmlLink(): ClickSchematic = ClickSchematic()
-
-        @JvmStatic
-        fun interval(vararg intervals: IntervalFinder.Interval): Schematic = Schematic(IntervalFinder(intervals))
-
-        @JvmStatic
-        fun regex(regex: String): Schematic = Schematic(RegexFinder(regex))
-
-        fun span(input: CharSequence, setup: MonkeyWrench.() -> Unit): CharSequence {
-            val instance = build()
-            setup(instance)
-            return instance.doTheThing(input)
+        fun workOn(textViews: Array<TextView>, setup: MonkeyWrench.() -> Unit) {
+            create(setup).apply {
+                for (textView in textViews) {
+                    workOn(textView)
+                }
+            }
         }
 
-        fun span(textView: TextView, setup: MonkeyWrench.() -> Unit) {
-            span(textView.text, textView, setup)
+        fun workOn(textView: TextView, setup: MonkeyWrench.() -> Unit) {
+            workOn(textView.text, textView, setup)
         }
 
-        fun span(input: CharSequence, textView: TextView, setup: MonkeyWrench.() -> Unit) {
+        fun workOn(input: CharSequence, textView: TextView, setup: MonkeyWrench.() -> Unit) {
             val instance = MonkeyWrench()
             setup(instance)
-            instance.doTheThingUnto(input, textView)
+            instance.workOn(input, textView)
         }
     }
 
@@ -64,27 +60,15 @@ class MonkeyWrench private constructor() {
         return this
     }
 
-    // region Kotlin builder methods
-
-    fun <T : Schematic> schematic(schematic: T, setup: T.() -> Unit) {
+    fun <T : Schematic> addSchematic(schematic: T, setup: T.() -> Unit) {
         addSchematic(schematic)
         setup(schematic)
     }
 
-    fun allOfIt(setup: Schematic.() -> Unit) = schematic(allOfIt(), setup)
-    fun tag(open: CharSequence, close: CharSequence, setup: Schematic.() -> Unit) = schematic(tag(open, close), setup)
-    fun html(tag: String, setup: Schematic.() -> Unit) = schematic(tag("<$tag>", "</$tag>"), setup)
-    fun htmlBold(setup: Schematic.() -> Unit) = schematic(html("b"), setup)
-    fun htmlLink(setup: ClickSchematic.() -> Unit) = schematic(htmlLink(), setup)
-    fun interval(vararg intervals: Pair<Int, Int>, setup: Schematic.() -> Unit) = schematic(interval(*(intervals.map { IntervalFinder.Interval(it.first, it.second) }).toTypedArray()), setup)
-    fun regex(regex: String, setup: Schematic.() -> Unit) = schematic(regex(regex), setup)
-
-    // endregion
-
     /**
      * Does the thing
      */
-    fun doTheThing(input: CharSequence): CharSequence {
+    fun work(input: CharSequence): CharSequence {
 
         val matches = ArrayList<Match>()
 
@@ -104,7 +88,7 @@ class MonkeyWrench private constructor() {
             val output = match.schematic.getOutput(match)
 
             // Start from end of previous match, until before the opening tag of the match
-            val start = match.p0 - match.openLength
+            val start = match.p0
 
             // Append text before the match with no span
             if (start > end) {
@@ -115,7 +99,7 @@ class MonkeyWrench private constructor() {
             // Position before appending the output
             val p0 = builder.length
 
-            // Append the sequence
+            // Append the output
             builder.append(output.sequence)
 
             output.span?.let { span ->
@@ -124,7 +108,7 @@ class MonkeyWrench private constructor() {
             }
 
             // Save the position after the closing tag, so we can append the next piece of text before the next match
-            end = match.p1 + match.closeLength
+            end = match.p0 + match.input.length
         }
 
         // Append remaining text after the final match, or everything if there were no matches
@@ -133,13 +117,14 @@ class MonkeyWrench private constructor() {
         return builder
     }
 
-    /**
-     * Does the thing to the text view
-     */
-    fun doTheThingUnto(input: CharSequence, textView: TextView) {
-        textView.text = doTheThing(input)
-        schematics.forEach { span ->
-            span.setupTextView(textView)
+    fun workOn(textView: TextView) {
+        workOn(textView.text, textView)
+    }
+
+    fun workOn(input: CharSequence, textView: TextView) {
+        textView.text = work(input)
+        schematics.forEach { s: Schematic ->
+            s.setupTextView(textView)
         }
     }
 }

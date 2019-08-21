@@ -8,10 +8,10 @@ import com.novasa.monkeywrench.finder.Match
 open class Span(val match: Match) : MetricAffectingSpan() {
 
     override fun updateDrawState(ds: TextPaint) {
-        match.schematic.apply(ds, match.sequence)
+        match.schematic.apply(ds, match)
     }
 
     override fun updateMeasureState(paint: TextPaint) {
-        match.schematic.apply(paint, match.sequence)
+        match.schematic.apply(paint, match)
     }
 }

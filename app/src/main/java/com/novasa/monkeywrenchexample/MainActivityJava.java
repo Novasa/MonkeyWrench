@@ -7,6 +7,9 @@ import android.widget.Button;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 import com.novasa.monkeywrench.MonkeyWrench;
+import com.novasa.monkeywrench.schematic.Bits;
+import com.novasa.monkeywrench.schematic.DeleteMutater;
+import com.novasa.monkeywrench.schematic.Schematics;
 
 public class MainActivityJava extends Activity {
 
@@ -17,16 +20,27 @@ public class MainActivityJava extends Activity {
         setContentView(R.layout.activity_main);
 
         final TextView tv = findViewById(R.id.textView);
-        final Button btn = findViewById(R.id.buttonSpan);
+        final Button btnSpan = findViewById(R.id.buttonSpan);
+        final Button btnReset = findViewById(R.id.buttonReset);
         final String input = getString(R.string.input);
 
-        btn.setOnClickListener(new View.OnClickListener() {
+        tv.setText(input);
+
+        btnSpan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MonkeyWrench.build()
-                        .addSchematic(MonkeyWrench.allOfIt()
-                                .strikethrough())
-                        .doTheThingUnto(input, tv);
+                MonkeyWrench.create()
+                        .addSchematic(Schematics.htmlBold()
+                                .addMutater(new DeleteMutater())
+                                .addBit(Bits.strikeThrough()))
+                        .workOn(tv);
+            }
+        });
+
+        btnReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                tv.setText(input);
             }
         });
     }

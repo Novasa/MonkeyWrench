@@ -1,10 +1,13 @@
 package com.novasa.monkeywrenchexample
 
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.novasa.monkeywrench.MonkeyWrench
+import com.novasa.monkeywrench.finder.to
+import com.novasa.monkeywrench.schematic.*
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -18,18 +21,18 @@ class MainActivity : AppCompatActivity() {
         textView.text = input
 
         buttonSpan.setOnClickListener {
-            MonkeyWrench.span(input, textView) {
+            MonkeyWrench.workOn(textView) {
 
                 htmlBold {
                     fakeBold()
                 }
 
                 htmlLink {
-                    color(Color.RED)
+                    textColor(Color.RED)
                     scale(1.5f)
                     underline()
 
-                    onClick { uri ->
+                    onClick { uri: Uri? ->
                         Toast.makeText(this@MainActivity, "$uri", Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -43,10 +46,20 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 regex("amet") {
-                    color(Color.BLACK)
+                    textColor(Color.BLACK)
+                    scale(0.5f)
                 }
+
+                regex("sunt") {
+                    delete()
+                }
+
+                htmlFontColor()
             }
         }
 
+        buttonReset.setOnClickListener {
+            textView.text = input
+        }
     }
 }

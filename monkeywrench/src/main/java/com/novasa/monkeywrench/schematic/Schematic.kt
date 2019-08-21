@@ -1,24 +1,39 @@
 package com.novasa.monkeywrench.schematic
 
-import android.graphics.Paint
-import android.graphics.Typeface
 import android.text.TextPaint
 import android.widget.TextView
 import com.novasa.monkeywrench.finder.Finder
+import com.novasa.monkeywrench.finder.GlobalMatch
 import com.novasa.monkeywrench.finder.Match
 import com.novasa.monkeywrench.span.Span
 
-open class Schematic(val finders: List<Finder>) {
+open class Schematic {
 
-    constructor(vararg finders: Finder) : this(finders.asList())
+    open class Output(val sequence: CharSequence, val span: Any?)
 
+    private val finders = ArrayList<Finder>()
     private val mutaters = ArrayList<Mutater>()
-    private val painters = ArrayList<Painter>()
+    private val bits = ArrayList<Bit>()
+
+    fun addFinder(finder: Finder): Schematic = this.also {
+        finders.add(finder)
+    }
+
+    fun addMutater(mutater: Mutater): Schematic = this.also {
+        mutaters.add(mutater)
+    }
+
+    fun addBit(bit: Bit): Schematic = this.also {
+        bits.add(bit)
+    }
 
     open fun getOutput(match: Match): Output {
-        var sequence = match.sequence
-        mutaters.forEach {
-            sequence = it.apply(sequence)
+
+        var sequence = match.output
+
+        // Mutaters can manipulate the input sequence before applying bits
+        for (mutater in mutaters) {
+            sequence = mutater.apply(sequence)
         }
 
         val span = createSpan(match)
@@ -30,81 +45,20 @@ open class Schematic(val finders: List<Finder>) {
         return Span(match)
     }
 
-    protected var typeFace: Typeface? = null
-    protected var color: Int? = null
-    protected var bgColor: Int? = null
-    protected var scale: Float? = null
-    protected var underline = false
-    protected var strikethrough = false
-    protected var fakeBold = false
-
-    fun typeFace(typeface: Typeface): Schematic {
-        typeFace = typeface
-        return this
-    }
-
-    fun color(color: Int): Schematic {
-        this.color = color
-        return this
-    }
-
-    fun backgroundColor(color: Int): Schematic {
-        this.bgColor = color
-        return this
-    }
-
-    fun scale(scale: Float): Schematic {
-        this.scale = scale
-        return this
-    }
-
-    fun underline(): Schematic {
-        this.underline = true
-        return this
-    }
-
-    fun strikethrough(): Schematic {
-        this.strikethrough = true
-        return this
-    }
-
-    fun fakeBold(): Schematic {
-        this.fakeBold = true
-        return this
-    }
-
-    internal fun findMatches(input: CharSequence): List<Match> = finders.flatMap {
-        it.findMatches(input, this)
-    }
-
-    open fun apply(paint: Paint, sequence: CharSequence) {
-
-        typeFace?.let {
-            paint.typeface = it
+    internal fun findMatches(input: CharSequence): List<Match> {
+        if (finders.isEmpty()) {
+            return listOf(GlobalMatch(this, input))
         }
-
-        color?.let {
-            paint.color = it
+        return finders.flatMap {
+            it.findMatches(this, input)
         }
-
-        bgColor?.let {
-            if (paint is TextPaint) {
-                paint.bgColor = it
-            }
-        }
-
-        scale?.let {
-            paint.textSize *= it
-        }
-
-        paint.isUnderlineText = underline
-        paint.isStrikeThruText = strikethrough
-        paint.isFakeBoldText = fakeBold
     }
 
-    open fun setupTextView(textView: TextView) {
-
+    open fun apply(paint: TextPaint, match: Match) {
+        for (bit in bits) {
+            bit.apply(paint, match)
+        }
     }
 
-    open class Output(val sequence: CharSequence, val span: Any?)
+    open fun setupTextView(textView: TextView) {}
 }
