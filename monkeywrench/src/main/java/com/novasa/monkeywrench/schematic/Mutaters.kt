@@ -1,13 +1,21 @@
 package com.novasa.monkeywrench.schematic
 
+import java.util.*
+
 
 // region Mutaters
 
 /** Deletes everything found by the matcher */
 class DeleteMutater : Mutater {
-    override fun apply(sequence: CharSequence): CharSequence {
-        return ""
-    }
+    override fun apply(input: CharSequence): CharSequence = ""
+}
+
+class UpperCaseMutater: Mutater {
+    override fun apply(input: CharSequence): CharSequence = input.toString().toUpperCase(Locale.getDefault())
+}
+
+class LowerCaseMutater: Mutater {
+    override fun apply(input: CharSequence): CharSequence = input.toString().toLowerCase(Locale.getDefault())
 }
 
 // endregion
@@ -18,7 +26,13 @@ class DeleteMutater : Mutater {
 object Mutaters {
 
     @JvmStatic
-    fun delete(): Mutater = DeleteMutater()
+    fun createDelete(): Mutater = DeleteMutater()
+
+    @JvmStatic
+    fun createUpperCase(): Mutater = UpperCaseMutater()
+
+    @JvmStatic
+    fun createLowerCase(): Mutater = LowerCaseMutater()
 }
 
 // endregion
@@ -26,8 +40,16 @@ object Mutaters {
 
 // region Schematic Extensions
 
-fun Schematic.delete() {
-    addMutater(Mutaters.delete())
+fun Schematic.addMutaterDelete() {
+    addMutater(Mutaters.createDelete())
+}
+
+fun Schematic.addMutaterUpperCase() {
+    addMutater(Mutaters.createUpperCase())
+}
+
+fun Schematic.addMutaterLowerCase() {
+    addMutater(Mutaters.createLowerCase())
 }
 
 // endregion

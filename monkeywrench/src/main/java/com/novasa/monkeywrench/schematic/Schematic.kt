@@ -7,6 +7,9 @@ import com.novasa.monkeywrench.finder.GlobalMatch
 import com.novasa.monkeywrench.finder.Match
 import com.novasa.monkeywrench.span.Span
 
+/**
+ *
+ */
 open class Schematic {
 
     open class Output(val sequence: CharSequence, val span: Any?)

@@ -6,7 +6,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.novasa.monkeywrench.MonkeyWrench
-import com.novasa.monkeywrench.finder.to
+import com.novasa.monkeywrench.finder.*
 import com.novasa.monkeywrench.schematic.*
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -23,38 +23,45 @@ class MainActivity : AppCompatActivity() {
         buttonSpan.setOnClickListener {
             MonkeyWrench.workOn(textView) {
 
-                htmlBold {
-                    fakeBold()
+                addSchematic {
+                    addFinderHtmlBold()
+                    addBitFakeBold()
                 }
 
-                htmlLink {
-                    textColor(Color.RED)
-                    scale(1.5f)
-                    underline()
+                addSchematicClickable {
+                    addFinderHtmlALink()
+                    addFinderHttpLink()
+                    addBitTextColor(Color.RED)
+                    addBitScale(1.5f)
+                    addBitUnderline()
 
-                    onClick { uri: Uri? ->
+                    onClick { uri: Uri ->
                         Toast.makeText(this@MainActivity, "$uri", Toast.LENGTH_SHORT).show()
                     }
                 }
 
-                tag("QQ", "WW") {
-                    underline()
+                addSchematic {
+                    addFinderTag("QQ", "WW")
+                    addBitUnderline()
                 }
 
-                interval(2 to 4, 6 to 8) {
-                    backgroundColor(Color.GREEN)
+                addSchematic {
+                    addFinderIntervals(2 to 4, 6 to 8)
+                    addBitBackgroundColor(Color.GREEN)
                 }
 
-                regex("amet") {
-                    textColor(Color.BLACK)
-                    scale(0.5f)
+                addSchematic {
+                    addFinderRegex("amet")
+                    addBitTextColor(Color.BLACK)
+                    addBitScale(0.5f)
                 }
 
-                regex("sunt") {
-                    delete()
+                addSchematic {
+                    addFinderRegex("sunt")
+                    addMutaterDelete()
                 }
 
-                htmlFontColor()
+                addSchematicHtmlFontColor()
             }
         }
 

@@ -57,25 +57,25 @@ class FakeBoldBit : Bit {
 object Bits {
 
     @JvmStatic
-    fun typeface(typeface: Typeface): Bit = TypefaceBit(typeface)
+    fun createTypeface(typeface: Typeface): Bit = TypefaceBit(typeface)
 
     @JvmStatic
-    fun textColor(@ColorInt color: Int): Bit = TextColorBit(color)
+    fun createTextColor(@ColorInt color: Int): Bit = TextColorBit(color)
 
     @JvmStatic
-    fun backgroundColor(@ColorInt color: Int): Bit = BackgroundColorBit(color)
+    fun createBackgroundColor(@ColorInt color: Int): Bit = BackgroundColorBit(color)
 
     @JvmStatic
-    fun scale(scale: Float): Bit = ScaleBit(scale)
+    fun createScale(scale: Float): Bit = ScaleBit(scale)
 
     @JvmStatic
-    fun underline(): Bit = UnderlineBit()
+    fun createUnderline(): Bit = UnderlineBit()
 
     @JvmStatic
-    fun strikeThrough(): Bit = StrikeThroughBit()
+    fun createStrikeThrough(): Bit = StrikeThroughBit()
 
     @JvmStatic
-    fun fakeBold(): Bit = FakeBoldBit()
+    fun createFakeBold(): Bit = FakeBoldBit()
 }
 
 // endregion
@@ -83,12 +83,12 @@ object Bits {
 
 // region Schematic Extensions
 
-fun Schematic.typeface(typeface: Typeface) = addBit(Bits.typeface(typeface))
-fun Schematic.textColor(@ColorInt color: Int) = addBit(Bits.textColor(color))
-fun Schematic.backgroundColor(@ColorInt color: Int) = addBit(Bits.backgroundColor(color))
-fun Schematic.scale(scale: Float) = addBit(Bits.scale(scale))
-fun Schematic.underline() = addBit(Bits.underline())
-fun Schematic.strikeThrough() = addBit(Bits.strikeThrough())
-fun Schematic.fakeBold() = addBit(Bits.fakeBold())
+fun Schematic.addBitTypeface(typeface: Typeface) = addBit(Bits.createTypeface(typeface))
+fun Schematic.addBitTextColor(@ColorInt color: Int) = addBit(Bits.createTextColor(color))
+fun Schematic.addBitBackgroundColor(@ColorInt color: Int) = addBit(Bits.createBackgroundColor(color))
+fun Schematic.addBitScale(scale: Float) = addBit(Bits.createScale(scale))
+fun Schematic.addBitUnderline() = addBit(Bits.createUnderline())
+fun Schematic.addBitStrikeThrough() = addBit(Bits.createStrikeThrough())
+fun Schematic.addBitFakeBold() = addBit(Bits.createFakeBold())
 
 // endregion

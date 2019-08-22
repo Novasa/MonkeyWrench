@@ -8,6 +8,7 @@ import com.novasa.monkeywrench.finder.Match
 import com.novasa.monkeywrench.schematic.Bit
 import com.novasa.monkeywrench.schematic.Mutater
 import com.novasa.monkeywrench.schematic.Schematic
+import com.novasa.monkeywrench.schematic.Schematics
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -17,9 +18,10 @@ import kotlin.collections.ArrayList
  * An instance consists of one or more [Schematic]s.
  *
  * A [Schematic] consists of three types of parts:
- * 1. [Finder]s find matches in the input text, that the [Schematic] will apply to.
+ * 1. [Finder]s find [Match]es in the input text, that the [Schematic] will work on.
+ *      If no finders are supplied, the schematic will work on the entire input.
  * 2. [Mutater]s mutate the input text found by the [Finder]s.
- * 3. [Bit]s
+ * 3. [Bit]s apply effects to the output text, like text color, scale or clickable links.
  */
 class MonkeyWrench private constructor() {
 
@@ -60,9 +62,12 @@ class MonkeyWrench private constructor() {
         return this
     }
 
+    fun addSchematic(setup: Schematic.() -> Unit) {
+        addSchematic(Schematics.create(), setup)
+    }
+
     fun <T : Schematic> addSchematic(schematic: T, setup: T.() -> Unit) {
-        addSchematic(schematic)
-        setup(schematic)
+        addSchematic(schematic.also(setup))
     }
 
     /**

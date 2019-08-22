@@ -1,9 +1,10 @@
 package com.novasa.monkeywrench.finder
 
-import com.novasa.monkeywrench.schematic.ClickSchematic
 import com.novasa.monkeywrench.schematic.Schematic
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+
+// region Implementations
 
 open class IntervalFinder(protected val intervals: Array<out Interval>) : Finder {
 
@@ -64,7 +65,7 @@ open class TagFinder(open: CharSequence, close: CharSequence, outputGroupIndex: 
 open class HtmlTagFinder(tag: CharSequence, outputGroupIndex: Int = 1) : TagFinder("<$tag>", "</$tag>", outputGroupIndex)
 
 /** Use for html tags that need to extract a attribute value. */
-open class HtmlTagAttributeFinder(tag: CharSequence, attribute: CharSequence) : TagFinder("<$tag $attribute=(.*?)>", "</$tag>", 2) {
+open class HtmlTagAttributeFinder(tag: CharSequence, attribute: CharSequence) : TagFinder("<$tag\\s+$attribute=(.*?)>", "</$tag>", 2) {
 
     override fun onMatch(matcher: Matcher, schematic: Schematic, input: String, p0: Int, output: String): Match {
         val attributeValue = matcher.group(1).trim('\"', '\'')
@@ -75,3 +76,55 @@ open class HtmlTagAttributeFinder(tag: CharSequence, attribute: CharSequence) : 
         return ValueMatch(schematic, input, p0, output, attributeValue)
     }
 }
+
+// endregion
+
+
+// region JVM Statics
+
+object Finders {
+
+    @JvmStatic
+    fun createInterval(vararg intervals: IntervalFinder.Interval) = IntervalFinder(intervals)
+
+    @JvmStatic
+    fun createRegex(regex: String, outputGroupIndex: Int = 0) = RegexFinder(regex, outputGroupIndex)
+
+    @JvmStatic
+    fun createTag(open: CharSequence, close: CharSequence, outputGroupIndex: Int = 1) = TagFinder(open, close, outputGroupIndex)
+
+    @JvmStatic
+    fun createHtmlTag(tag: CharSequence, outputGroupIndex: Int = 1) = HtmlTagFinder(tag, outputGroupIndex)
+
+    @JvmStatic
+    fun createHtmlTagAttribute(tag: CharSequence, attribute: CharSequence) = HtmlTagAttributeFinder(tag, attribute)
+
+    @JvmStatic
+    fun createHtmlBold() = createHtmlTag("b")
+
+    @JvmStatic
+    fun createHtmlUnderline() = createHtmlTag("u")
+
+    @JvmStatic
+    fun createHtmlALink() = createHtmlTagAttribute("a", "href")
+
+    @JvmStatic
+    fun createHttpLink() = createRegex("https?:\\/\\/+[^\\s]+[\\w]")
+}
+
+// endregion
+
+
+// region Schematic Extensions
+
+fun Schematic.addFinderIntervals(vararg intervals: IntervalFinder.Interval) = addFinder(Finders.createInterval(*intervals))
+fun Schematic.addFinderRegex(regex: String, outputGroupIndex: Int = 0) = addFinder(Finders.createRegex(regex, outputGroupIndex))
+fun Schematic.addFinderTag(open: CharSequence, close: CharSequence, outputGroupIndex: Int = 1) = addFinder(Finders.createTag(open, close, outputGroupIndex))
+fun Schematic.addFinderHtmlTag(tag: CharSequence, outputGroupIndex: Int = 1) = addFinder(Finders.createHtmlTag(tag, outputGroupIndex))
+fun Schematic.addFinderHtmlTagAttribute(tag: CharSequence, attribute: CharSequence) = addFinder(Finders.createHtmlTagAttribute(tag, attribute))
+fun Schematic.addFinderHtmlBold() = addFinder(Finders.createHtmlBold())
+fun Schematic.addFinderHtmlUnderline() = addFinder(Finders.createHtmlUnderline())
+fun Schematic.addFinderHtmlALink() = addFinder(Finders.createHtmlALink())
+fun Schematic.addFinderHttpLink() = addFinder(Finders.createHttpLink())
+
+// endregion

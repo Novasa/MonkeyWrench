@@ -5,11 +5,17 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
 import androidx.annotation.Nullable;
+
 import com.novasa.monkeywrench.MonkeyWrench;
+import com.novasa.monkeywrench.finder.Finders;
 import com.novasa.monkeywrench.schematic.Bits;
-import com.novasa.monkeywrench.schematic.DeleteMutater;
+import com.novasa.monkeywrench.schematic.Mutater;
+import com.novasa.monkeywrench.schematic.Mutaters;
 import com.novasa.monkeywrench.schematic.Schematics;
+
+import org.jetbrains.annotations.NotNull;
 
 public class MainActivityJava extends Activity {
 
@@ -22,26 +28,18 @@ public class MainActivityJava extends Activity {
         final TextView tv = findViewById(R.id.textView);
         final Button btnSpan = findViewById(R.id.buttonSpan);
         final Button btnReset = findViewById(R.id.buttonReset);
-        final String input = getString(R.string.input);
+        final String text = getString(R.string.input);
 
-        tv.setText(input);
+        tv.setText(text);
 
-        btnSpan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                MonkeyWrench.create()
-                        .addSchematic(Schematics.htmlBold()
-                                .addMutater(new DeleteMutater())
-                                .addBit(Bits.strikeThrough()))
-                        .workOn(tv);
-            }
-        });
+        btnSpan.setOnClickListener(v -> MonkeyWrench.create()
+                .addSchematic(Schematics.create()
+                        .addMutater(input -> null)
+                        .addFinder(Finders.createHtmlBold())
+                        .addMutater(Mutaters.createUpperCase())
+                        .addBit(Bits.createStrikeThrough()))
+                .workOn(tv));
 
-        btnReset.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                tv.setText(input);
-            }
-        });
+        btnReset.setOnClickListener(v -> tv.setText(text));
     }
 }

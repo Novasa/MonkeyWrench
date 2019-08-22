@@ -14,25 +14,29 @@ import com.novasa.monkeywrench.span.ClickSpan
 
 class ClickSchematic : Schematic() {
 
-    private var onClickEvent: ((Uri?) -> Unit)? = null
+    private var onClickEvent: ((Uri) -> Unit)? = null
 
     override fun createSpan(match: Match): Any? {
-        val uri: Uri? = if (match is ValueMatch) {
-            Uri.parse(match.value)
-        } else null
+        val uri: Uri = Uri.parse(
+            if (match is ValueMatch) match.value
+            else match.output.toString()
+        )
 
         return ClickSpan(match, uri)
     }
 
-    fun onClick(onClick: (Uri?) -> Unit): ClickSchematic {
+    fun onClick(onClick: (Uri) -> Unit): ClickSchematic {
         this.onClickEvent = onClick
         return this
     }
 
-    internal fun onClick(uri: Uri?) {
+    internal fun onClick(uri: Uri) {
         onClickEvent?.let {
             it(uri)
-        } ?: Log.w(MonkeyWrench.TAG, "Click Wrench was poked, but no handler has been supplied. Do the onClick() thing in the setup please.")
+        } ?: Log.w(
+            MonkeyWrench.TAG,
+            "Click Wrench was poked, but no handler has been supplied. Do the onClick() thing in the setup please."
+        )
     }
 
     override fun setupTextView(textView: TextView) {
@@ -48,38 +52,22 @@ class ClickSchematic : Schematic() {
 object Schematics {
 
     @JvmStatic
-    fun allOfIt(): Schematic = Schematic()
+    fun create(): Schematic = Schematic()
+
+    fun createClickable(): ClickSchematic = ClickSchematic()
 
     @JvmStatic
-    fun withFinder(finder: Finder): Schematic = Schematic().apply {
-        addFinder(finder)
+    fun createHtmlALink(): ClickSchematic = createClickable().apply {
+        addFinder(Finders.createHtmlTagAttribute("a", "href"))
     }
 
     @JvmStatic
-    fun interval(vararg intervals: IntervalFinder.Interval): Schematic = withFinder(IntervalFinder(intervals))
-
-    @JvmStatic
-    fun regex(regex: String): Schematic = withFinder(RegexFinder(regex))
-
-    @JvmStatic
-    fun tag(open: CharSequence, close: CharSequence): Schematic = withFinder(TagFinder(open, close))
-
-    @JvmStatic
-    fun html(tag: String): Schematic = withFinder(HtmlTagFinder(tag))
-
-    @JvmStatic
-    fun htmlBold(): Schematic = html("b")
-
-    @JvmStatic
-    fun htmlUnderline(): Schematic = html("u")
-
-    @JvmStatic
-    fun htmlLink(): ClickSchematic = ClickSchematic().apply {
-        addFinder(HtmlTagAttributeFinder("a", "href"))
+    fun createHttpLink(): ClickSchematic = createClickable().apply {
+        addFinder(Finders.createHttpLink())
     }
 
     @JvmStatic
-    fun htmlFontColor(): Schematic = Schematic().apply {
+    fun createHtmlFontColor(): Schematic = create().apply {
         addFinder(HtmlTagAttributeFinder("font", "color"))
         addBit(object : Bit {
             override fun apply(paint: TextPaint, match: Match) {
@@ -92,25 +80,30 @@ object Schematics {
 // endregion
 
 
-// region Extensions
+// region MonkeyWrench Extensions
 
-fun MonkeyWrench.allOfIt(setup: Schematic.() -> Unit) = addSchematic(Schematics.allOfIt(), setup)
-fun MonkeyWrench.interval(vararg intervals: IntervalFinder.Interval, setup: Schematic.() -> Unit) = addSchematic(Schematics.interval(*intervals), setup)
-fun MonkeyWrench.regex(regex: String, setup: Schematic.() -> Unit) = addSchematic(Schematics.regex(regex), setup)
-fun MonkeyWrench.tag(open: CharSequence, close: CharSequence, setup: Schematic.() -> Unit) = addSchematic(Schematics.tag(open, close), setup)
-fun MonkeyWrench.html(tag: String, setup: Schematic.() -> Unit) = addSchematic(Schematics.html(tag), setup)
-fun MonkeyWrench.htmlBold(setup: Schematic.() -> Unit) = addSchematic(Schematics.htmlBold(), setup)
-fun MonkeyWrench.htmlUnderline(setup: Schematic.() -> Unit) = addSchematic(Schematics.htmlUnderline(), setup)
-fun MonkeyWrench.htmlLink(setup: ClickSchematic.() -> Unit) = addSchematic(Schematics.htmlLink(), setup)
-fun MonkeyWrench.htmlFontColor() = addSchematic(Schematics.htmlFontColor())
+fun MonkeyWrench.addSchematicClickable(setup: ClickSchematic.() -> Unit) =
+    addSchematic(Schematics.createClickable(), setup)
+
+fun MonkeyWrench.addSchematicHtmlALink(setup: ClickSchematic.() -> Unit) =
+    addSchematic(Schematics.createHtmlALink(), setup)
+
+fun MonkeyWrench.addSchematicHttpLink(setup: ClickSchematic.() -> Unit) =
+    addSchematic(Schematics.createHttpLink(), setup)
+
+fun MonkeyWrench.addSchematicHtmlFontColor() = addSchematic(Schematics.createHtmlFontColor())
 
 fun MonkeyWrench.simpleHtml() {
-    addSchematic(Schematics.htmlBold()) {
-        fakeBold()
+    addSchematic {
+        addFinderHtmlBold()
+        addBitFakeBold()
     }
-    addSchematic(Schematics.htmlUnderline()) {
-        underline()
+    addSchematic {
+        addFinderHtmlUnderline()
+        addBitUnderline()
     }
+
+    addSchematicHtmlFontColor()
 }
 
 // endregion
