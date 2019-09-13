@@ -2,7 +2,6 @@ package com.novasa.monkeywrenchexample;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -11,11 +10,8 @@ import androidx.annotation.Nullable;
 import com.novasa.monkeywrench.MonkeyWrench;
 import com.novasa.monkeywrench.finder.Finders;
 import com.novasa.monkeywrench.schematic.Bits;
-import com.novasa.monkeywrench.schematic.Mutater;
 import com.novasa.monkeywrench.schematic.Mutaters;
 import com.novasa.monkeywrench.schematic.Schematics;
-
-import org.jetbrains.annotations.NotNull;
 
 public class MainActivityJava extends Activity {
 
@@ -34,12 +30,13 @@ public class MainActivityJava extends Activity {
 
         btnSpan.setOnClickListener(v -> MonkeyWrench.create()
                 .addSchematic(Schematics.create()
-                        .addMutater(input -> null)
+                        .addMutater(Mutaters.createDelete())
                         .addFinder(Finders.createHtmlBold())
                         .addMutater(Mutaters.createUpperCase())
                         .addBit(Bits.createStrikeThrough()))
                 .workOn(tv));
 
         btnReset.setOnClickListener(v -> tv.setText(text));
+
     }
 }

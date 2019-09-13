@@ -23,6 +23,7 @@ import kotlin.collections.ArrayList
  * 2. [Mutater]s mutate the input text found by the [Finder]s.
  * 3. [Bit]s apply effects to the output text, like text color, scale or clickable links.
  */
+@Suppress("unused")
 class MonkeyWrench private constructor() {
 
     companion object {
@@ -62,10 +63,12 @@ class MonkeyWrench private constructor() {
         return this
     }
 
+    @JvmSynthetic
     fun addSchematic(setup: Schematic.() -> Unit) {
         addSchematic(Schematics.create(), setup)
     }
 
+    @JvmSynthetic
     fun <T : Schematic> addSchematic(schematic: T, setup: T.() -> Unit) {
         addSchematic(schematic.also(setup))
     }

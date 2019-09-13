@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.novasa.monkeywrench.schematic
 
 import android.graphics.Color
@@ -54,6 +56,7 @@ object Schematics {
     @JvmStatic
     fun create(): Schematic = Schematic()
 
+    @JvmStatic
     fun createClickable(): ClickSchematic = ClickSchematic()
 
     @JvmStatic

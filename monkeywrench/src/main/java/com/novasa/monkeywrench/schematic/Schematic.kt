@@ -48,12 +48,15 @@ open class Schematic {
         return Span(match)
     }
 
-    internal fun findMatches(input: CharSequence): List<Match> {
-        if (finders.isEmpty()) {
-            return listOf(GlobalMatch(this, input))
-        }
-        return finders.flatMap {
-            it.findMatches(this, input)
+    internal fun findMatches(input: CharSequence): List<Match> = if (finders.isEmpty()) {
+        listOf(GlobalMatch(input))
+
+    } else finders.flatMap {
+        it.findMatches(input)
+
+    }.also {
+        it.forEach { match ->
+            match.schematic = this
         }
     }
 

@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.novasa.monkeywrench.schematic
 
 import android.graphics.Typeface
