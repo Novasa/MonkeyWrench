@@ -66,13 +66,20 @@ open class RegexFinder(val regex: String, val outputGroupIndex: Int = 0) : Finde
 open class TagFinder(open: CharSequence, close: CharSequence, outputGroupIndex: Int = 1) : RegexFinder("$open(.*?)$close", outputGroupIndex)
 
 /** Use for html tags. */
-open class HtmlTagFinder(tag: CharSequence, outputGroupIndex: Int = 1) : TagFinder("<$tag>", "</$tag>", outputGroupIndex)
+open class HtmlTagFinder(tag: CharSequence, outputGroupIndex: Int = 1) : TagFinder("<$tag>", "<\\/$tag>", outputGroupIndex)
 
-/** Use for html tags that need to extract an attribute value. */
-open class HtmlTagAttributeFinder(tag: CharSequence, attribute: CharSequence) : TagFinder("<$tag\\s+(?:[^>]*?\\s+)?$attribute=([\"'])(.*?)\\1.*?>", "</$tag>", 3) {
+/**
+ * Use for html tags that need to extract an attribute value.
+ */
+// Regex explanation:
+// \s+              At least one whitespace character
+// (?:[^>]*?\s)?    Non capturing group, anything, but NOT closing tag ">", followed by a white space, zero or more times
+// (["']?)   \1     Match starting quotations before value, and rematch the closing quotation
+// (?:\s.*?)?       Non capturing group, one whitespace followed by anything, zero or more times
+open class HtmlTagAttributeFinder(tag: CharSequence, attribute: CharSequence) : TagFinder("<$tag\\s+(?:[^>]*?\\s)?$attribute=([\"']?)(.*?)\\1(?:\\s.*?)?>", "<\\/$tag>", 3) {
 
     override fun onMatch(matcher: Matcher, input: String, p0: Int, output: String): Match {
-        val attributeValue = matcher.group(2).trim('\"', '\'')
+        val attributeValue = matcher.group(2)
         return onMatch(matcher, input, p0, output, attributeValue)
     }
 
@@ -107,6 +114,9 @@ object Finders {
     fun createHtmlBold() = createHtmlTag("b")
 
     @JvmStatic
+    fun createHtmlStrong() = createHtmlTag("strong")
+
+    @JvmStatic
     fun createHtmlUnderline() = createHtmlTag("u")
 
     @JvmStatic
@@ -127,6 +137,7 @@ fun Schematic.addFinderTag(open: CharSequence, close: CharSequence, outputGroupI
 fun Schematic.addFinderHtmlTag(tag: CharSequence, outputGroupIndex: Int = 1) = addFinder(Finders.createHtmlTag(tag, outputGroupIndex))
 fun Schematic.addFinderHtmlTagAttribute(tag: CharSequence, attribute: CharSequence) = addFinder(Finders.createHtmlTagAttribute(tag, attribute))
 fun Schematic.addFinderHtmlBold() = addFinder(Finders.createHtmlBold())
+fun Schematic.addFinderHtmlString() = addFinder(Finders.createHtmlStrong())
 fun Schematic.addFinderHtmlUnderline() = addFinder(Finders.createHtmlUnderline())
 fun Schematic.addFinderHtmlALink() = addFinder(Finders.createHtmlALink())
 fun Schematic.addFinderHttpLink() = addFinder(Finders.createHttpLink())

@@ -7,4 +7,16 @@
         QQDuisWW aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
         Excepteur sint occaecat cupidatat non &lt;a href="www.google.com">proident&lt;/a>, sunt &lt;font color="#550099">in culpa qui officia&lt;/font> &lt;font color="#00c099">deserunt mollit anim id&lt;/font> est laborum.
     </string>
+
+    <string name="input2">
+        &lt;p>Med Budget får du den billigste parkering i Københavns Lufthavn. Du finder Budget-parkering på P15 (P17 og P19 er midlertidigt lukket pga. COVID-19), som ligger 1,5-2 km fra Terminal 2 og 3. Både til og fra Terminalerne kan du tage lufthavnens gratis terminalbusser, som kører døgnet rundt. &lt;/p>
+        &lt;strong>OBS - terminalbussen kører med færre afgange&lt;/strong>&lt;/p>
+        &lt;p>COVID-19 betyder væsentlig færre passagerer i CPH, derfor kører terminalbussen med færre afgange.&lt;/p>
+        &lt;p>&lt;em>Skal du til eller fra terminalerne i &lt;strong>dagtimerne fra 04.00 til 24.00&lt;/strong>?&lt;/em>&lt;/p>
+        &lt;p>Bussen kører hvert 20. minut. &lt;a title=\"Se den fulde busplan.\" href=\"https://info.parkering.cph.dk/terminalbus\" data-linkto=\"https://\">Se den fulde busplan.&lt;/a>&lt;/p>
+        &lt;p>&lt;em>Skal du til eller fra terminalerne i &lt;strong>aften- og nattetimerne fra&lt;/strong> &lt;strong>24.00 til 04.00&lt;/strong>?&lt;/em>&lt;/p>
+        &lt;p>Bussen kører 1 gang i timen. Vi anbefaler derfor, at du planlægger din ankomst til p-anlægget, så du undgår at skulle vente unødigt. &lt;a title=\"Se den fulde busplan.\" href=\"https://info.parkering.cph.dk/terminalbus\" data-linkto=\"https://\">Se den fulde busplan.&lt;/a>&lt;/p>
+        &lt;strong>Højdebegrænsning&lt;/strong>&lt;/p>
+        &lt;p>Der er ingen højdebegrænsning på vores Budget-anlæg.&lt;/p>&lt;h4>Budget&lt;/h4>
+    </string>
 </resources>

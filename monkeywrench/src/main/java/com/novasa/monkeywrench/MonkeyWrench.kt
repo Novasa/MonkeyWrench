@@ -2,6 +2,7 @@ package com.novasa.monkeywrench
 
 import android.text.SpannableStringBuilder
 import android.text.Spanned
+import android.util.Log
 import android.widget.TextView
 import com.novasa.monkeywrench.finder.Finder
 import com.novasa.monkeywrench.finder.Match
@@ -9,6 +10,7 @@ import com.novasa.monkeywrench.schematic.Bit
 import com.novasa.monkeywrench.schematic.Mutater
 import com.novasa.monkeywrench.schematic.Schematic
 import com.novasa.monkeywrench.schematic.Schematics
+import java.lang.Integer.max
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -35,7 +37,10 @@ class MonkeyWrench private constructor() {
 
         fun create(setup: MonkeyWrench.() -> Unit): MonkeyWrench = create().also(setup)
 
-        fun work(input: CharSequence, setup: MonkeyWrench.() -> Unit): CharSequence = create(setup).work(input)
+        fun work(input: CharSequence, setup: MonkeyWrench.() -> Unit): CharSequence =
+            create(setup).work(
+                input
+            )
 
         fun workOn(textViews: Array<TextView>, setup: MonkeyWrench.() -> Unit) {
             create(setup).apply {
@@ -57,10 +62,10 @@ class MonkeyWrench private constructor() {
     }
 
     private val schematics = ArrayList<Schematic>()
+    private var debug = false
 
-    fun addSchematic(schematic: Schematic): MonkeyWrench {
+    fun addSchematic(schematic: Schematic): MonkeyWrench = this.apply {
         schematics.add(schematic)
-        return this
     }
 
     @JvmSynthetic
@@ -95,6 +100,12 @@ class MonkeyWrench private constructor() {
 
             val output = match.schematic.getOutput(match)
 
+
+            if (debug) {
+                logDebugInfo(match, output)
+            }
+
+
             // Start from end of previous match, until before the opening tag of the match
             val start = match.p0
 
@@ -104,19 +115,21 @@ class MonkeyWrench private constructor() {
                 builder.append(input.subSequence(end, start))
             }
 
-            // Position before appending the output
-            val p0 = builder.length
+            if (output.sequence.isNotEmpty()) {
+                // Position before appending the output
+                val p0 = builder.length
 
-            // Append the output
-            builder.append(output.sequence)
+                // Append the output
+                builder.append(output.sequence)
 
-            output.span?.let { span ->
-                // Set the span
-                builder.setSpan(span, p0, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                output.span?.let { span ->
+                    // Set the span
+                    builder.setSpan(span, p0, builder.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
             }
 
             // Save the position after the closing tag, so we can append the next piece of text before the next match
-            end = match.p0 + match.input.length
+            end = maxOf(end, match.p0 + match.input.length)
         }
 
         // Append remaining text after the final match, or everything if there were no matches
@@ -134,5 +147,21 @@ class MonkeyWrench private constructor() {
         schematics.forEach { s: Schematic ->
             s.setupTextView(textView)
         }
+    }
+
+    fun debug(): MonkeyWrench = this.apply {
+        debug = true
+    }
+
+    private fun logDebugInfo(match: Match, output: Schematic.Output) {
+        val info = StringBuilder().apply {
+            append("\nSCHEMATIC: ${match.schematic}")
+            append("\n\tP0: ${match.p0}")
+            append("\n\tIN: ${match.input}")
+            append("\n\tOUTPUT: ${output.sequence}, span: ${output.span}")
+
+        }.toString()
+
+        Log.d("MonkeyWrench", info)
     }
 }

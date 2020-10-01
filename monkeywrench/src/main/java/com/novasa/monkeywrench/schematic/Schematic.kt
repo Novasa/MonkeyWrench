@@ -18,15 +18,15 @@ open class Schematic {
     private val mutaters = ArrayList<Mutater>()
     private val bits = ArrayList<Bit>()
 
-    fun addFinder(finder: Finder): Schematic = this.also {
+    fun addFinder(finder: Finder): Schematic = this.apply {
         finders.add(finder)
     }
 
-    fun addMutater(mutater: Mutater): Schematic = this.also {
+    fun addMutater(mutater: Mutater): Schematic = this.apply {
         mutaters.add(mutater)
     }
 
-    fun addBit(bit: Bit): Schematic = this.also {
+    fun addBit(bit: Bit): Schematic = this.apply {
         bits.add(bit)
     }
 
