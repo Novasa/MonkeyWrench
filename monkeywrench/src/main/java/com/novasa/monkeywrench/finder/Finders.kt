@@ -68,7 +68,7 @@ open class TagFinder(open: CharSequence, close: CharSequence, outputGroupIndex: 
 /** Use for html tags. */
 open class HtmlTagFinder(tag: CharSequence, outputGroupIndex: Int = 1) : TagFinder("<$tag>", "</$tag>", outputGroupIndex)
 
-/** Use for html tags that need to extract a attribute value. */
+/** Use for html tags that need to extract an attribute value. */
 open class HtmlTagAttributeFinder(tag: CharSequence, attribute: CharSequence) : TagFinder("<$tag\\s+$attribute=(.*?)>", "</$tag>", 2) {
 
     override fun onMatch(matcher: Matcher, input: String, p0: Int, output: String): Match {
