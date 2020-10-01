@@ -69,10 +69,10 @@ open class TagFinder(open: CharSequence, close: CharSequence, outputGroupIndex: 
 open class HtmlTagFinder(tag: CharSequence, outputGroupIndex: Int = 1) : TagFinder("<$tag>", "</$tag>", outputGroupIndex)
 
 /** Use for html tags that need to extract an attribute value. */
-open class HtmlTagAttributeFinder(tag: CharSequence, attribute: CharSequence) : TagFinder("<$tag\\s+$attribute=(.*?)>", "</$tag>", 2) {
+open class HtmlTagAttributeFinder(tag: CharSequence, attribute: CharSequence) : TagFinder("<$tag\\s+(?:[^>]*?\\s+)?$attribute=([\"'])(.*?)\\1.*?>", "</$tag>", 3) {
 
     override fun onMatch(matcher: Matcher, input: String, p0: Int, output: String): Match {
-        val attributeValue = matcher.group(1).trim('\"', '\'')
+        val attributeValue = matcher.group(2).trim('\"', '\'')
         return onMatch(matcher, input, p0, output, attributeValue)
     }
 
